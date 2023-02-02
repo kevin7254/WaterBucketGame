@@ -25,6 +25,7 @@ public class GameScreen implements Screen {
 
     private OrthographicCamera camera;
     private long lastDropTime;
+    private int score;
 
     private Rectangle bucket;
     private final Vector3 touchPos = new Vector3(); //To stop GC from running frequently
@@ -58,10 +59,6 @@ public class GameScreen implements Screen {
         bucket.y = 20;
         bucket.width = 64;
         bucket.height = 64;
-
-        WaterDrop waterDrop = waterDropPool.obtain();
-        waterDrop.spawnRainDrop();
-        waterDrops.add(waterDrop);
     }
 
 
@@ -83,6 +80,9 @@ public class GameScreen implements Screen {
         for (WaterDrop waterdrop : waterDrops) {
             game.batch.draw(dropImage, waterdrop.getX(), waterdrop.getY());
         }
+
+        game.font.draw(game.batch, "SCORE: " + score, 700, 450);
+
         game.batch.end();
 
         if (Gdx.input.isTouched()) {
@@ -119,6 +119,7 @@ public class GameScreen implements Screen {
                 dropSound.play();
                 iter.remove();
                 waterDropPool.free(waterDrop);
+                score++;
             }
         }
     }
