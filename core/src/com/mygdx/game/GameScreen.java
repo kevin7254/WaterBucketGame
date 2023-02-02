@@ -7,11 +7,10 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
 
@@ -25,11 +24,18 @@ public class GameScreen implements Screen {
     private Music rainMusic;
 
     private OrthographicCamera camera;
+    private long lastDropTime;
 
     private Rectangle bucket;
-    private Array<Rectangle> raindrops;
-    private long lastDropTime;
     private final Vector3 touchPos = new Vector3(); //To stop GC from running frequently
+
+    private final Array<WaterDrop> waterDrops = new Array<>();
+    private final Pool<WaterDrop> waterDropPool = new Pool<WaterDrop>() {
+        @Override
+        protected WaterDrop newObject() {
+            return new WaterDrop();
+        }
+    };
 
     public GameScreen(final Drop game) {
         this.game = game;
@@ -44,7 +50,7 @@ public class GameScreen implements Screen {
         rainMusic.play();
 
         camera = new OrthographicCamera();
-        camera.setToOrtho(false,800,480);
+        camera.setToOrtho(false, 800, 480);
 
 
         bucket = new Rectangle();
@@ -53,19 +59,11 @@ public class GameScreen implements Screen {
         bucket.width = 64;
         bucket.height = 64;
 
-        raindrops = new Array<>();
-        spawnRainDrop();
+        WaterDrop waterDrop = waterDropPool.obtain();
+        waterDrop.spawnRainDrop();
+        waterDrops.add(waterDrop);
     }
 
-    private void spawnRainDrop() {
-        Rectangle raindrop = new Rectangle();
-        raindrop.x = MathUtils.random(0, 800-64);
-        raindrop.y = 480;
-        raindrop.width = 64;
-        raindrop.height = 64;
-        raindrops.add(raindrop);
-        lastDropTime = TimeUtils.nanoTime();
-    }
 
     @Override
     public void show() {
@@ -74,45 +72,53 @@ public class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        ScreenUtils.clear(0,0,0.2f,1);
+        ScreenUtils.clear(0, 0, 0.2f, 1);
 
         camera.update();
 
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
         game.batch.draw(bucketImage, bucket.x, bucket.y);
-        for(Rectangle raindrop: raindrops) {
-            game.batch.draw(dropImage, raindrop.x, raindrop.y);
+
+        for (WaterDrop waterdrop : waterDrops) {
+            game.batch.draw(dropImage, waterdrop.getX(), waterdrop.getY());
         }
         game.batch.end();
 
-        if(Gdx.input.isTouched()) {
+        if (Gdx.input.isTouched()) {
             touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
             camera.unproject(touchPos);
             bucket.x = touchPos.x - 64 / 2;
         }
 
-        if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             bucket.x -= 200 * Gdx.graphics.getDeltaTime();
         }
-        if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
             bucket.x += 200 * Gdx.graphics.getDeltaTime();
         }
 
-        if(bucket.x < 0) bucket.x = 0;
-        if(bucket.x > 800 - 64) bucket.x = 800 - 64;
+        if (bucket.x < 0) bucket.x = 0;
+        if (bucket.x > 800 - 64) bucket.x = 800 - 64;
 
-        if(TimeUtils.nanoTime() - lastDropTime > 1000000000) {
-            spawnRainDrop();
+        if (TimeUtils.nanoTime() - lastDropTime > 1000000000) {
+            WaterDrop waterDrop = waterDropPool.obtain();
+            waterDrop.spawnRainDrop();
+            waterDrops.add(waterDrop);
+            lastDropTime = TimeUtils.nanoTime();
         }
 
-        for(Iterator<Rectangle> iter = raindrops.iterator(); iter.hasNext();) {
-            Rectangle raindrop = iter.next();
-            raindrop.y -= 200 * Gdx.graphics.getDeltaTime();
-            if (raindrop.y + 64 < 0) iter.remove();
-            if(raindrop.overlaps(bucket)) {
+        for (Iterator<WaterDrop> iter = waterDrops.iterator(); iter.hasNext(); ) {
+            WaterDrop waterDrop = iter.next();
+            waterDrop.setY((200 * Gdx.graphics.getDeltaTime()));
+            if (waterDrop.getY() + 64 < 0) {
+                iter.remove();
+                waterDropPool.free(waterDrop);
+            }
+            if (waterDrop.raindrop.overlaps(bucket)) {
                 dropSound.play();
                 iter.remove();
+                waterDropPool.free(waterDrop);
             }
         }
     }

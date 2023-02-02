@@ -12,7 +12,7 @@ public class Drop extends Game {
 
 
     @Override
-    public void create(){
+    public void create() {
         batch = new SpriteBatch();
         font = new BitmapFont();
         mainMenuScreen = new MainMenuScreen(this);
@@ -29,6 +29,6 @@ public class Drop extends Game {
     public void dispose() {
         batch.dispose();
         font.dispose();
-        mainMenuScreen.dispose();
+        mainMenuScreen.dispose(); //Needs to be called explicitly due to Screen API.
     }
 }

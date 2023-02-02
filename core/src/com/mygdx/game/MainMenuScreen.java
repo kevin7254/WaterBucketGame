@@ -9,11 +9,13 @@ import com.badlogic.gdx.utils.ScreenUtils;
 public class MainMenuScreen implements Screen {
     private final Drop game;
     private OrthographicCamera camera;
+
     public MainMenuScreen(final Drop game) {
         this.game = game;
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 800, 480);
     }
+
     @Override
     public void show() {
 
@@ -21,7 +23,7 @@ public class MainMenuScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        ScreenUtils.clear(0,0,0.2f,1);
+        ScreenUtils.clear(0, 0, 0.2f, 1);
         camera.update();
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
@@ -29,7 +31,7 @@ public class MainMenuScreen implements Screen {
         game.font.draw(game.batch, "Tap to begin", 100, 100);
         game.batch.end();
 
-        if(Gdx.input.isTouched()) {
+        if (Gdx.input.isTouched()) {
             game.setScreen(new GameScreen(game));
             dispose();
         }
