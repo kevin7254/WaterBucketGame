@@ -44,7 +44,7 @@ public class GameScreen implements Screen {
         camera.setToOrtho(false, 800, 480);
 
         bucket = new Rectangle();
-        bucket.x = 800 / 2 - 64 / 2;
+        bucket.x = 800f / 2 - 64f / 2;
         bucket.y = 20;
         bucket.width = 64;
         bucket.height = 64;
@@ -77,7 +77,7 @@ public class GameScreen implements Screen {
         if (Gdx.input.isTouched()) {
             touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
             camera.unproject(touchPos);
-            bucket.x = touchPos.x - 64 / 2;
+            bucket.x = touchPos.x - 64f / 2;
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
@@ -106,9 +106,9 @@ public class GameScreen implements Screen {
         for (Iterator<Droplet> iter = waterDrops.iterator(); iter.hasNext(); ) {
             Droplet waterDrop = iter.next();
             if (waterDrop instanceof GoldenWaterDrop)
-                waterDrop.setY(waterDrop.getY() - waterDrop.getDropSpeed() * Gdx.graphics.getDeltaTime());
+                waterDrop.setY(waterDrop.getY() - waterDrop.getDropSpeed() * Gdx.graphics.getDeltaTime() * (score * 0.01f + 1));
             else if (waterDrop instanceof WaterDrop)
-                waterDrop.setY(waterDrop.getY() - waterDrop.getDropSpeed() * Gdx.graphics.getDeltaTime());
+                waterDrop.setY(waterDrop.getY() - waterDrop.getDropSpeed() * Gdx.graphics.getDeltaTime() * (score * 0.01f + 1));
             if (waterDrop.getY() + 64 < 0) {
                 iter.remove();
                 removeDroplet(waterDrop);
