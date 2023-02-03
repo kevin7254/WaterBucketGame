@@ -9,16 +9,13 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Pool;
-import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.TimeUtils;
+import com.badlogic.gdx.utils.*;
 
 import java.util.Iterator;
 
+
 public class GameScreen implements Screen {
     private final Drop game;
-    private Texture dropImage;
     private Texture bucketImage;
     private Sound dropSound;
     private Music rainMusic;
@@ -30,18 +27,11 @@ public class GameScreen implements Screen {
     private Rectangle bucket;
     private final Vector3 touchPos = new Vector3(); //To stop GC from running frequently
 
-    private final Array<WaterDrop> waterDrops = new Array<>();
-    private final Pool<WaterDrop> waterDropPool = new Pool<WaterDrop>() {
-        @Override
-        protected WaterDrop newObject() {
-            return new WaterDrop();
-        }
-    };
+    private final Array<Droplet> waterDrops = new Array<>();
 
     public GameScreen(final Drop game) {
         this.game = game;
 
-        dropImage = new Texture(Gdx.files.internal("droplet.png"));
         bucketImage = new Texture(Gdx.files.internal("bucket.png"));
 
         dropSound = Gdx.audio.newSound(Gdx.files.internal("drop.wav"));
@@ -52,7 +42,6 @@ public class GameScreen implements Screen {
 
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 800, 480);
-
 
         bucket = new Rectangle();
         bucket.x = 800 / 2 - 64 / 2;
@@ -77,8 +66,8 @@ public class GameScreen implements Screen {
         game.batch.begin();
         game.batch.draw(bucketImage, bucket.x, bucket.y);
 
-        for (WaterDrop waterdrop : waterDrops) {
-            game.batch.draw(dropImage, waterdrop.getX(), waterdrop.getY());
+        for (Droplet waterdrop : waterDrops) {
+            game.batch.draw(waterdrop.getDropImage(), waterdrop.getX(), waterdrop.getY());
         }
 
         game.font.draw(game.batch, "SCORE: " + score, 700, 450);
@@ -102,23 +91,23 @@ public class GameScreen implements Screen {
         if (bucket.x > 800 - 64) bucket.x = 800 - 64;
 
         if (TimeUtils.nanoTime() - lastDropTime > 1000000000) {
-            WaterDrop waterDrop = waterDropPool.obtain();
+            Droplet waterDrop = WaterDrop.getPool().obtain();
             waterDrop.spawnRainDrop();
             waterDrops.add(waterDrop);
             lastDropTime = TimeUtils.nanoTime();
         }
 
-        for (Iterator<WaterDrop> iter = waterDrops.iterator(); iter.hasNext(); ) {
-            WaterDrop waterDrop = iter.next();
-            waterDrop.setY((200 * Gdx.graphics.getDeltaTime()));
+        for (Iterator<Droplet> iter = waterDrops.iterator(); iter.hasNext(); ) {
+            Droplet waterDrop = iter.next();
+            waterDrop.setY(waterDrop.getY() - 200 * Gdx.graphics.getDeltaTime());
             if (waterDrop.getY() + 64 < 0) {
                 iter.remove();
-                waterDropPool.free(waterDrop);
+                WaterDrop.getPool().free(waterDrop);
             }
-            if (waterDrop.raindrop.overlaps(bucket)) {
+            if (waterDrop.overlaps(bucket)) {
                 dropSound.play();
                 iter.remove();
-                waterDropPool.free(waterDrop);
+                WaterDrop.getPool().free(waterDrop);
                 score++;
             }
         }
@@ -146,7 +135,7 @@ public class GameScreen implements Screen {
 
     @Override
     public void dispose() {
-        dropImage.dispose();
+        WaterDrop.dispose();
         bucketImage.dispose();
         dropSound.dispose();
         rainMusic.dispose();

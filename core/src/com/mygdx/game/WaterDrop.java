@@ -1,14 +1,22 @@
 package com.mygdx.game;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Pool;
 
-public class WaterDrop implements Pool.Poolable {
-    protected final Rectangle raindrop;
+public class WaterDrop extends Droplet implements Pool.Poolable {
+    private static final Texture dropImage = new Texture(Gdx.files.internal("droplet.png"));
+    private static final int DROP_SPEED = 200;
+
+    private static final Pool<Droplet> waterDropPool = new Pool<Droplet>() {
+        @Override
+        protected Droplet newObject() {
+            return new WaterDrop();
+        }
+    };
 
     public WaterDrop() {
-        raindrop = new Rectangle();
     }
 
     @Override
@@ -17,21 +25,21 @@ public class WaterDrop implements Pool.Poolable {
     }
 
     protected void spawnRainDrop() {
-        raindrop.x = MathUtils.random(0, 800 - 64);
-        raindrop.y = 480;
-        raindrop.width = 64;
-        raindrop.height = 64;
+        setX(MathUtils.random(0, 800 - 64));
+        setY(480);
+        setWidth(64);
+        setHeight(64);
     }
 
-    public void setY(float y) {
-        raindrop.y -= y;
+    public static void dispose() {
+        dropImage.dispose();
     }
 
-    public float getX() {
-        return raindrop.x;
+    public Texture getDropImage() {
+        return dropImage;
     }
 
-    public float getY() {
-        return raindrop.y;
+    public static Pool<Droplet> getPool() {
+        return waterDropPool;
     }
 }
